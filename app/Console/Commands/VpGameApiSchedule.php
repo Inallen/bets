@@ -30,14 +30,15 @@ class VpGameApiSchedule extends Command
      */
     protected $description = 'Command description';
 
-
     protected $baseUri = 'http://www.vpgame.com/prediction/api/prediction/matches';
-
 
     protected $platform = 'vpgame';
 
-
     private $client;
+
+    private $leftTeam;
+
+    private $rightTeam;
 
     private $searchCategories = [
         1 => 'dota',
@@ -145,6 +146,7 @@ class VpGameApiSchedule extends Command
                 'steam_team_id' => $leftTeamInfo['steam_team_id']
             ]);
         }
+        $this->leftTeam = $teamLeft;
 
         $rightTeamInfo = $matchInfo['teams']['right'];
         $teamRight = Team::where('team_short_name', $rightTeamInfo['short_name'])
@@ -160,6 +162,7 @@ class VpGameApiSchedule extends Command
                 'steam_team_id' => $rightTeamInfo['steam_team_id']
             ]);
         }
+        $this->rightTeam = $teamRight;
 
         $match = Match::where('category_id', $categoryIndex)
             ->where('tournament_id', $tournament->id)
@@ -196,15 +199,82 @@ class VpGameApiSchedule extends Command
                 'match_id' => $this->match->id,
                 'title' => $this->parseTitle($predictionInfo),
                 'start_time' => $predictionInfo['start_time'],
+                'handicap' => $this->parseHandicap($predictionInfo),
+                'score' => $predictionInfo['score'],
+                'scene' => $this->parseScene($predictionInfo),
                 'prediction_type' => $predictionInfo['mode_type'],
-                'prediction_status' => $predictionInfo['start_time'],
+                'prediction_status' => $this->parseStatus($predictionInfo['status']),
+            ]);
+            $illusion = Illusion::create([
+                'platform' => $this->platform,
+                'illusion_type' => Illusion::TYPE_PREDICTION,
+                'uri' => $predictionInfo['id'],
+                'illusion_id' => $prediction->id,
             ]);
         }
     }
 
 
     private function parseTitle($predictionInfo) {
+        $title = '';
+        $handicap = $this->parseHandicap($predictionInfo);
+        $score = $predictionInfo['score'];
+        $scene = $this->parseScene($predictionInfo);
+        if ($predictionInfo['mode_type'] == Prediction::TYPE_MATCH_WIN) {
+            $title .=  'Match Winner';
+        } elseif ($predictionInfo['mode_type'] == Prediction::TYPE_HANDICAP) {
+            if (!empty($handicap)) {
+                if ($handicap > 0) {
+                    $title .= $this->rightTeam->name_short . ' ' . -$handicap;
+                } else {
+                    $title .= $this->leftTeam->name_short . ' ' . $handicap;
+                }
+            }
+        } elseif ($predictionInfo['mode_type'] == Prediction::TYPE_TEN_KILLS) {
+            $title .= '10 Kills';
+        } elseif ($predictionInfo['mode_type'] == Prediction::TYPE_TOTAL_SCORE) {
+            $title .= $score;
+        } elseif ($predictionInfo['mode_type'] == Prediction::TYPE_MAP_WIN) {
+            $title .=  'Winner';
+        }
+        if (!empty($scene)) {
+            $title .= "[Game $scene]";
+        }
+        return $title;
+    }
 
+    private function parseHandicap($predictionInfo) {
+        if (!empty($predictionInfo['handicap'])) {
+            if ($predictionInfo['option']['left']['is_handicap']) {
+                return -$predictionInfo['handicap'];
+            }
+            if ($predictionInfo['option']['right']['is_handicap']) {
+                return $predictionInfo['handicap'];
+            }
+        }
+        return 0;
+    }
+
+    private function parseScene($predictionInfo) {
+        $terms = explode(' ', $predictionInfo['title']);
+        if (!empty($terms)) {
+            foreach ($terms as $term) {
+                if (is_numeric($term)) {
+                    return intval($term);
+                }
+            }
+        }
+        return 0;
+    }
+
+    private function parseStatus($status) {
+        $statusPool = [
+            'cancel' => 0,
+            'normal' => 1,
+            'start' => 2,
+            'clear' => 3,
+        ];
+        return $statusPool[$status];
     }
 
 }

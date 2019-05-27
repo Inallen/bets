@@ -17,7 +17,10 @@ class CreatePredictionsTable extends Migration
             $table->bigIncrements('id');
             $table->string('title');
             $table->unsignedBigInteger('match_id');
-            $table->timestamp('start_time');
+            $table->unsignedBigInteger('start_time');
+            $table->decimal('handicap', 6, 1);
+            $table->decimal('score', 6, 1);
+            $table->unsignedTinyInteger('scene')->default(0);
             $table->unsignedTinyInteger('prediction_type')->default(0);
             $table->unsignedTinyInteger('prediction_status')->default(0);
             $table->timestamps();
