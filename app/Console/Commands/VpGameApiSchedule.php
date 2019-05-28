@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Category;
 use App\Models\Illusion;
 use App\Models\Match;
 use App\Models\Prediction;
@@ -11,6 +12,7 @@ use App\Utils\Traits\Url;
 use GuzzleHttp\Client;
 use GuzzleHttp\Promise;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\App;
 
 
 class VpGameApiSchedule extends Command
@@ -56,6 +58,19 @@ class VpGameApiSchedule extends Command
         6 => 'tennis',
     ];
 
+    private $chineseNumber = [
+        '一' => 1,
+        '二' => 2,
+        '三' => 3,
+        '四' => 4,
+        '五' => 5,
+        '六' => 6,
+        '七' => 7,
+        '八' => 8,
+        '九' => 9,
+        '十' => 10,
+    ];
+
     private $match;
 
     /**
@@ -77,14 +92,19 @@ class VpGameApiSchedule extends Command
     public function handle()
     {
         $promises = [];
+
         foreach ($this->searchCategories as $key => $category) {
+            $query = [
+                'category' => $category,
+                'offset' => 0,
+                'limit' => 20,
+                't' => time() * 1000,
+            ];
+            if (App::isLocale('zh_cn')) {
+                $query['lang'] = 'zh_cn';
+            }
             $promises[$category] =  $this->client->getAsync($this->baseUri, [
-                'query' => [
-                    'category' => $category,
-                    'offset' => 0,
-                    'limit' => 6,
-                    't' => time() * 1000,
-                    ]
+                'query' => $query
                 ]);
         }
         $results = Promise\unwrap($promises);
@@ -184,6 +204,7 @@ class VpGameApiSchedule extends Command
         $match->right_team_score = $matchInfo['teams']['right']['score'];
         $match->result = $matchInfo['result'];
         $match->start_time = $matchInfo['start_time'];
+        $match->match_status = $this->parseMatchStatus($matchInfo['status']);
         $match->save();
         return $match;
     }
@@ -215,7 +236,8 @@ class VpGameApiSchedule extends Command
     }
 
 
-    private function parseTitle($predictionInfo) {
+    private function parseTitle($predictionInfo)
+    {
         $title = '';
         $handicap = $this->parseHandicap($predictionInfo);
         $score = $predictionInfo['score'];
@@ -225,15 +247,23 @@ class VpGameApiSchedule extends Command
         } elseif ($predictionInfo['mode_type'] == Prediction::TYPE_HANDICAP) {
             if (!empty($handicap)) {
                 if ($handicap > 0) {
-                    $title .= $this->rightTeam->name_short . ' ' . -$handicap;
+                    $title .= $this->rightTeam->team_short_name . ' ' . -$handicap;
                 } else {
-                    $title .= $this->leftTeam->name_short . ' ' . $handicap;
+                    $title .= $this->leftTeam->team_short_name . ' ' . $handicap;
                 }
             }
-        } elseif ($predictionInfo['mode_type'] == Prediction::TYPE_TEN_KILLS) {
-            $title .= '10 Kills';
+        } elseif ($predictionInfo['mode_type'] == Prediction::TYPE_REGULAR_KILLS) {
+            if ($this->match->category_id == Category::CATEGORY_DOTA) {
+                $title .= '10 Kills';
+            } elseif ($this->match->category_id == Category::CATEGORY_LOL) {
+                $title .= '5 Kills';
+            } else {
+                $title .= $predictionInfo['mode_name'];
+            }
         } elseif ($predictionInfo['mode_type'] == Prediction::TYPE_TOTAL_SCORE) {
             $title .= $score;
+        } elseif ($predictionInfo['mode_type'] == Prediction::TYPE_REGULAR_ROUNDS) {
+            $title .=  'First 5 Rounds';
         } elseif ($predictionInfo['mode_type'] == Prediction::TYPE_MAP_WIN) {
             $title .=  'Winner';
         }
@@ -243,7 +273,8 @@ class VpGameApiSchedule extends Command
         return $title;
     }
 
-    private function parseHandicap($predictionInfo) {
+    private function parseHandicap($predictionInfo)
+    {
         if (!empty($predictionInfo['handicap'])) {
             if ($predictionInfo['option']['left']['is_handicap']) {
                 return -$predictionInfo['handicap'];
@@ -255,24 +286,45 @@ class VpGameApiSchedule extends Command
         return 0;
     }
 
-    private function parseScene($predictionInfo) {
-        $terms = explode(' ', $predictionInfo['title']);
-        if (!empty($terms)) {
-            foreach ($terms as $term) {
-                if (is_numeric($term)) {
-                    return intval($term);
+    private function parseScene($predictionInfo)
+    {
+        if (App::isLocale('zh_cn')) {
+            foreach (array_keys($this->chineseNumber) as $key) {
+                if (strpos($predictionInfo['mode_name'], $key) !== false) {
+                    return $this->chineseNumber[$key];
+                }
+            }
+        } else {
+            $terms = explode(' ', $predictionInfo['mode_name']);
+            if (!empty($terms)) {
+                foreach ($terms as $term) {
+                    if (is_numeric($term)) {
+                        return intval($term);
+                    }
                 }
             }
         }
         return 0;
     }
 
-    private function parseStatus($status) {
+    private function parseStatus($status)
+    {
         $statusPool = [
             'cancel' => 0,
             'normal' => 1,
             'start' => 2,
             'clear' => 3,
+        ];
+        return $statusPool[$status];
+    }
+
+    private function parseMatchStatus($status)
+    {
+        $statusPool = [
+            'cancel' => 0,
+            'not_start' => 1,
+            'live' => 2,
+            'close' => 3,
         ];
         return $statusPool[$status];
     }

@@ -8,8 +8,9 @@ class Prediction extends Model
 {
     const TYPE_MATCH_WIN = 1;
     const TYPE_HANDICAP = 2;
-    const TYPE_TEN_KILLS = 3;
+    const TYPE_REGULAR_KILLS = 3;
     const TYPE_TOTAL_SCORE = 6;
+    const TYPE_REGULAR_ROUNDS = 11;
     const TYPE_MAP_WIN = 13;
 
     protected $table = 'predictions';
