@@ -380,6 +380,7 @@ class VpGameApiSchedule extends Command
             'normal' => 1,
             'not_start' => 2,
             'live' => 3,
+            'none' => 4,
             'close' => 9,
         ];
         return $statusPool[$status];
