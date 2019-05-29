@@ -17,9 +17,8 @@ class CreateIllusionsTable extends Migration
             $table->bigIncrements('id');
             $table->string('platform')->nullable();
             $table->unsignedBigInteger('uri');
-            $table->unsignedBigInteger('illusion_id');
-            $table->unsignedTinyInteger('illusion_type')->default(0);
-            $table->unsignedTinyInteger('illusion_status')->default(0);
+            $table->morphs('illusion');
+            $table->unsignedTinyInteger('status')->default(0);
             $table->timestamps();
         });
     }

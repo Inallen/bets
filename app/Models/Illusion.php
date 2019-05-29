@@ -6,19 +6,24 @@ use Illuminate\Database\Eloquent\Model;
 
 class Illusion extends Model
 {
-    const TYPE_CATEGORY = 1;
-    const TYPE_TOURNAMENT = 2;
-    const TYPE_MATCH = 3;
-    const TYPE_TEAM = 4;
-    const TYPE_PREDICTION = 5;
+    const TYPE_CATEGORY = 'App\Models\Category';
+    const TYPE_TOURNAMENT = 'APP\Models\Tournament';
+    const TYPE_MATCH = 'App\Models\Match';
+    const TYPE_TEAM = 'App\Models\Team';
+    const TYPE_PREDICTION = 'App\Models\Prediction';
 
     protected $table = 'illusions';
 
     protected $fillable = [
         'platform',
         'uri',
-        'illusion_id',
         'illusion_type',
-        'illusion_status',
+        'illusion_id',
+        'status',
     ];
+
+    public function illusion()
+    {
+        return $this->morphTo();
+    }
 }

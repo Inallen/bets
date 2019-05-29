@@ -73,6 +73,8 @@ class VpGameApiSchedule extends Command
 
     private $match;
 
+    private $predictionInfo;
+
     /**
      * Create a new command instance.
      *
@@ -128,7 +130,8 @@ class VpGameApiSchedule extends Command
                 if (isset($matchInfo['predictions'])) {
                     $predictions = $matchInfo['predictions'];
                     foreach ($predictions as $predictionInfo) {
-                        $this->parsePredictionInfo($predictionInfo);
+                        $this->predictionInfo = $predictionInfo;
+                        $this->parsePredictionInfo();
                     }
                 }
             }
@@ -184,67 +187,116 @@ class VpGameApiSchedule extends Command
         }
         $this->rightTeam = $teamRight;
 
-        $match = Match::where('category_id', $categoryIndex)
-            ->where('tournament_id', $tournament->id)
-            ->where('left_team_id', $teamLeft->id)
-            ->orWhere('right_team_id', $teamRight->id)
+        $illusion = Illusion::where('platform', $this->platform)
+            ->where('illusion_type', Illusion::TYPE_MATCH)
+            ->where('uri', $matchInfo['id'])
             ->first();
-        if (empty($match)) {
+        if (empty($illusion)) {
             $match = Match::create([
                 'category_id' => $categoryIndex,
                 'tournament_id' => $tournament->id,
                 'left_team_id' => $teamLeft->id,
                 'right_team_id' => $teamRight->id,
-                'start_time' => $matchInfo['start_time']
+                'left_team_score' => $matchInfo['teams']['left']['score'],
+                'right_team_score' => $matchInfo['teams']['right']['score'],
+                'result' => $matchInfo['result'],
+                'start_time' => $matchInfo['start_time'],
+                'match_status' => $this->parseMatchStatus($matchInfo['status']),
             ]);
+            Illusion::create([
+                'platform' => $this->platform,
+                'illusion_type' => Illusion::TYPE_MATCH,
+                'uri' => $matchInfo['id'],
+                'illusion_id' => $match->id,
+            ]);
+        } else {
+            $match = $illusion->illusion;
+            $matchUpdated = false;
+            if ($match->left_team_id != $teamLeft->id) {
+                $match->left_team_id = $teamLeft->id;
+                $matchUpdated = true;
+            }
+            if ($match->right_team_id != $teamRight->id) {
+                $match->right_team_id = $teamRight->id;
+                $matchUpdated = true;
+            }
+            if ($match->left_team_score != $matchInfo['teams']['left']['score']) {
+                $match->left_team_score = $matchInfo['teams']['left']['score'];
+                $matchUpdated = true;
+            }
+            if ($match->right_team_score != $matchInfo['teams']['right']['score']) {
+                $match->right_team_score = $matchInfo['teams']['right']['score'];
+                $matchUpdated = true;
+            }
+            if ($match->result != $matchInfo['result']) {
+                $match->result = $matchInfo['result'];
+                $matchUpdated = true;
+            }
+            if ($match->start_time != $matchInfo['start_time']) {
+                $match->start_time = $matchInfo['start_time'];
+                $matchUpdated = true;
+            }
+            if ($match->match_status != $this->parseMatchStatus($matchInfo['status'])) {
+                $match->match_status = $this->parseMatchStatus($matchInfo['status']);
+                $matchUpdated = true;
+            }
+            if ($matchUpdated) {
+                $match->save();
+            }
         }
-        $match->left_team_id = $teamLeft->id;
-        $match->right_team_id = $teamRight->id;
-        $match->left_team_score = $matchInfo['teams']['left']['score'];
-        $match->right_team_score = $matchInfo['teams']['right']['score'];
-        $match->result = $matchInfo['result'];
-        $match->start_time = $matchInfo['start_time'];
-        $match->match_status = $this->parseMatchStatus($matchInfo['status']);
-        $match->save();
         return $match;
     }
 
-    private function parsePredictionInfo($predictionInfo)
+    private function parsePredictionInfo()
     {
         $illusion = Illusion::where('platform', $this->platform)
             ->where('illusion_type', Illusion::TYPE_PREDICTION)
-            ->where('uri', $predictionInfo['id'])
+            ->where('uri', $this->predictionInfo['id'])
             ->first();
         if (empty($illusion)) {
             $prediction = Prediction::create([
                 'match_id' => $this->match->id,
-                'title' => $this->parseTitle($predictionInfo),
-                'start_time' => $predictionInfo['start_time'],
-                'handicap' => $this->parseHandicap($predictionInfo),
-                'score' => $predictionInfo['score'],
-                'scene' => $this->parseScene($predictionInfo),
-                'prediction_type' => $predictionInfo['mode_type'],
-                'prediction_status' => $this->parseStatus($predictionInfo['status']),
+                'title' => $this->parseTitle(),
+                'start_time' => $this->predictionInfo['start_time'],
+                'handicap' => $this->parseHandicap(),
+                'score' => $this->predictionInfo['score'],
+                'scene' => $this->parseScene(),
+                'prediction_type' => $this->predictionInfo['mode_type'],
+                'prediction_status' => $this->parseStatus($this->predictionInfo['status']),
             ]);
-            $illusion = Illusion::create([
+            Illusion::create([
                 'platform' => $this->platform,
                 'illusion_type' => Illusion::TYPE_PREDICTION,
-                'uri' => $predictionInfo['id'],
+                'uri' => $this->predictionInfo['id'],
                 'illusion_id' => $prediction->id,
             ]);
+        } else {
+            $prediction = $illusion->illusion;
+            $predictionUpdated = false;
+            if ($prediction->prediction_status != $this->parseStatus($this->predictionInfo['status'])) {
+                $prediction->prediction_status = $this->parseStatus($this->predictionInfo['status']);
+                $predictionUpdated = true;
+            }
+            if ($prediction->start_time != $this->predictionInfo['start_time']) {
+                $prediction->start_time = $this->predictionInfo['start_time'];
+                $predictionUpdated = true;
+            }
+            if ($predictionUpdated) {
+                $prediction->save();
+            }
         }
     }
 
 
-    private function parseTitle($predictionInfo)
+    private function parseTitle()
     {
         $title = '';
-        $handicap = $this->parseHandicap($predictionInfo);
-        $score = $predictionInfo['score'];
-        $scene = $this->parseScene($predictionInfo);
-        if ($predictionInfo['mode_type'] == Prediction::TYPE_MATCH_WIN) {
+        $handicap = $this->parseHandicap();
+        $score = $this->predictionInfo['score'];
+        $scene = $this->parseScene();
+        if ($this->predictionInfo['mode_type'] == Prediction::TYPE_MATCH_WIN) {
             $title .=  'Match Winner';
-        } elseif ($predictionInfo['mode_type'] == Prediction::TYPE_HANDICAP) {
+        } elseif ($this->predictionInfo['mode_type'] == Prediction::TYPE_HANDICAP) {
             if (!empty($handicap)) {
                 if ($handicap > 0) {
                     $title .= $this->rightTeam->team_short_name . ' ' . -$handicap;
@@ -252,19 +304,21 @@ class VpGameApiSchedule extends Command
                     $title .= $this->leftTeam->team_short_name . ' ' . $handicap;
                 }
             }
-        } elseif ($predictionInfo['mode_type'] == Prediction::TYPE_REGULAR_KILLS) {
+        } elseif ($this->predictionInfo['mode_type'] == Prediction::TYPE_REGULAR_KILLS) {
             if ($this->match->category_id == Category::CATEGORY_DOTA) {
                 $title .= '10 Kills';
             } elseif ($this->match->category_id == Category::CATEGORY_LOL) {
                 $title .= '5 Kills';
             } else {
-                $title .= $predictionInfo['mode_name'];
+                $title .= $this->predictionInfo['mode_name'];
             }
-        } elseif ($predictionInfo['mode_type'] == Prediction::TYPE_TOTAL_SCORE) {
+        } elseif ($this->predictionInfo['mode_type'] == Prediction::TYPE_TOTAL_SCORE) {
             $title .= $score;
-        } elseif ($predictionInfo['mode_type'] == Prediction::TYPE_REGULAR_ROUNDS) {
+        } elseif ($this->predictionInfo['mode_type'] == Prediction::TYPE_REGULAR_ROUNDS) {
             $title .=  'First 5 Rounds';
-        } elseif ($predictionInfo['mode_type'] == Prediction::TYPE_MAP_WIN) {
+        } elseif ($this->predictionInfo['mode_type'] == Prediction::TYPE_REGULAR_TIME) {
+            $title .=  '36 Minutes';
+        } elseif ($this->predictionInfo['mode_type'] == Prediction::TYPE_MAP_WIN) {
             $title .=  'Winner';
         }
         if (!empty($scene)) {
@@ -273,29 +327,29 @@ class VpGameApiSchedule extends Command
         return $title;
     }
 
-    private function parseHandicap($predictionInfo)
+    private function parseHandicap()
     {
-        if (!empty($predictionInfo['handicap'])) {
-            if ($predictionInfo['option']['left']['is_handicap']) {
-                return -$predictionInfo['handicap'];
+        if (!empty($this->predictionInfo['handicap'])) {
+            if ($this->predictionInfo['option']['left']['is_handicap']) {
+                return -$this->predictionInfo['handicap'];
             }
-            if ($predictionInfo['option']['right']['is_handicap']) {
-                return $predictionInfo['handicap'];
+            if ($this->predictionInfo['option']['right']['is_handicap']) {
+                return $this->predictionInfo['handicap'];
             }
         }
         return 0;
     }
 
-    private function parseScene($predictionInfo)
+    private function parseScene()
     {
         if (App::isLocale('zh_cn')) {
             foreach (array_keys($this->chineseNumber) as $key) {
-                if (strpos($predictionInfo['mode_name'], $key) !== false) {
+                if (strpos($this->predictionInfo['mode_name'], $key) !== false) {
                     return $this->chineseNumber[$key];
                 }
             }
         } else {
-            $terms = explode(' ', $predictionInfo['mode_name']);
+            $terms = explode(' ', $this->predictionInfo['mode_name']);
             if (!empty($terms)) {
                 foreach ($terms as $term) {
                     if (is_numeric($term)) {
@@ -313,7 +367,8 @@ class VpGameApiSchedule extends Command
             'cancel' => 0,
             'normal' => 1,
             'start' => 2,
-            'clear' => 3,
+            'wait_clear' => 8,
+            'clear' => 9,
         ];
         return $statusPool[$status];
     }
@@ -322,9 +377,10 @@ class VpGameApiSchedule extends Command
     {
         $statusPool = [
             'cancel' => 0,
-            'not_start' => 1,
-            'live' => 2,
-            'close' => 3,
+            'normal' => 1,
+            'not_start' => 2,
+            'live' => 3,
+            'close' => 9,
         ];
         return $statusPool[$status];
     }

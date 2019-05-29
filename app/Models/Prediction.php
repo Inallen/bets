@@ -11,6 +11,7 @@ class Prediction extends Model
     const TYPE_REGULAR_KILLS = 3;
     const TYPE_TOTAL_SCORE = 6;
     const TYPE_REGULAR_ROUNDS = 11;
+    const TYPE_REGULAR_TIME = 12;
     const TYPE_MAP_WIN = 13;
 
     protected $table = 'predictions';
@@ -25,5 +26,10 @@ class Prediction extends Model
         'prediction_type',
         'prediction_status'
     ];
+
+    public function illusion()
+    {
+        return $this->morphOne('App\Models\Illusion', 'illusion');
+    }
 
 }

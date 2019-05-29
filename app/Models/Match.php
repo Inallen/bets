@@ -18,6 +18,7 @@ class Match extends Model
         'right_team_score',
         'result',
         'start_time',
+        'match_status',
     ];
 
     public function leftTeam()
@@ -28,5 +29,10 @@ class Match extends Model
     public function rightTeam()
     {
         return $this->belongsTo('App\Models\Team', 'right_team_id');
+    }
+
+    public function illusion()
+    {
+        return $this->morphOne('App\Models\Illusion', 'illusion');
     }
 }
