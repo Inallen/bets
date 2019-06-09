@@ -35,4 +35,14 @@ class Match extends Model
     {
         return $this->morphOne('App\Models\Illusion', 'illusion');
     }
+
+    public function predictions()
+    {
+        return $this->hasMany('App\Models\Match', 'match_id');
+    }
+
+    public function tournament()
+    {
+        return $this->belongsTo('App\Models\Tournament', 'tournament_id');
+    }
 }

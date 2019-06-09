@@ -14,4 +14,9 @@ class Tournament extends Model
         'tournament_type',
         'tournament_status',
     ];
+
+    public function matches()
+    {
+        return $this->hasMany('App\Models\Match', 'tournament_id');
+    }
 }

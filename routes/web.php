@@ -14,3 +14,11 @@
 Route::get('/', function () {
     return view('app.layouts.default');
 });
+
+
+
+Route::prefix('webapp')->name('webapp.')->group(function () {
+    Route::apiResource('matches', 'MatchController');
+});
+
+

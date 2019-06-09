@@ -32,4 +32,9 @@ class Prediction extends Model
         return $this->morphOne('App\Models\Illusion', 'illusion');
     }
 
+    public function match()
+    {
+        return $this->belongsTo('App\Models\Match', 'match_id');
+    }
+
 }
