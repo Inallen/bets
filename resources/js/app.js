@@ -30,12 +30,17 @@ window.Vue = require('vue');
  */
 import VueRouter from 'vue-router';
 import routes from './routes';
+import store from './store';
+import config from './config';
+
+Vue.prototype._config = config;
 Vue.use(VueRouter);
 const router = new VueRouter({
     routes
 });
 
 var app = new Vue({
+    store,
     router,
 });
 app.$mount('#app');

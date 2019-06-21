@@ -1,13 +1,13 @@
 /*
 * Tencent is pleased to support the open source community by making WeUI available.
-* 
+*
 * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
-* 
+*
 * Licensed under the MIT License (the "License"); you may not use this file except in compliance
 * with the License. You may obtain a copy of the License at
-* 
+*
 *       http://opensource.org/licenses/MIT
-* 
+*
 * Unless required by applicable law or agreed to in writing, software distributed under the License is
 * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 * either express or implied. See the License for the specific language governing permissions and
@@ -15,14 +15,14 @@
 */
 /*
 * Tencent is pleased to support the open source community by making WeUI available.
-* 
+*
 * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
-* 
+*
 * Licensed under the MIT License (the "License"); you may not use this file except in compliance
 * with the License. You may obtain a copy of the License at
-* 
+*
 *       http://opensource.org/licenses/MIT
-* 
+*
 * Unless required by applicable law or agreed to in writing, software distributed under the License is
 * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 * either express or implied. See the License for the specific language governing permissions and
@@ -224,10 +224,12 @@
 * limitations under the License.
 */
 html {
+  height: 100%;
   -ms-text-size-adjust: 100%;
   -webkit-text-size-adjust: 100%;
 }
 body {
+  height: 100%;
   line-height: 1.6;
   font-family: -apple-system-font, "Helvetica Neue", sans-serif;
 }
@@ -241,6 +243,9 @@ a img {
 a {
   text-decoration: none;
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+.app-page {
+  height: 100%;
 }
 /*
 * Tencent is pleased to support the open source community by making WeUI available.
@@ -899,8 +904,25 @@ z-index:
   font-size: 12px;
   color: #888888;
 }
-.weui-tournament_result__label {
+.weui-match_result__label {
+  font-size: 20px;
   color: #888888;
+}
+.weui-match_time__label {
+  font-size: 12px;
+  color: #888888;
+}
+.weui-match_real_time__label {
+  font-size: 12px;
+  color: #000000;
+}
+.weui-match_real_label {
+  font-size: 14px;
+  color: #EBEBEB;
+  border: 2px;
+  border-radius: 5px;
+  padding: 1px 5px;
+  background-color: #1AAD19;
 }
 /*
 * Tencent is pleased to support the open source community by making WeUI available.
@@ -1750,6 +1772,50 @@ button.weui-vcode-btn {
   height: 100%;
   opacity: 0;
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+/*
+* Tencent is pleased to support the open source community by making WeUI available.
+*
+* Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+*
+* Licensed under the MIT License (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at
+*
+*       http://opensource.org/licenses/MIT
+*
+* Unless required by applicable law or agreed to in writing, software distributed under the License is
+* distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+* either express or implied. See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+.vue-pull-to-wrapper {
+  padding: 0;
+  border: 0 none;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.vue-pull-to-wrapper .scroll-container {
+  flex: 1;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  -webkit-overflow-scrolling: touch;
+}
+.vue-pull-to-wrapper .scroll-container .bottom-filler {
+  height: 0px;
+}
+.vue-pull-to-wrapper .scroll-container .bottom-fill {
+  transition-timing-function: cubic-bezier(0, 0, 0, 1);
+}
+.vue-pull-to-wrapper .action-block {
+  position: relative;
+  width: 100%;
+}
+.vue-pull-to-wrapper .action-block .default-text {
+  height: 100%;
+  line-height: 50px;
+  text-align: center;
 }
 /*
 * Tencent is pleased to support the open source community by making WeUI available.

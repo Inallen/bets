@@ -15,7 +15,8 @@ class MatchController extends Controller
      */
     public function index()
     {
-        return Match::simplePaginate(self::PAGE_SIZE);
+        return Match::with(['tournament', 'leftTeam', 'rightTeam', 'predictions'])
+            ->paginate(self::PAGE_SIZE);
     }
 
     /**

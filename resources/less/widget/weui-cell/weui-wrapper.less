@@ -14,34 +14,33 @@
 * limitations under the License.
 */
 
-@import "fn";
-
-html {
-    height: 100%;
-    -ms-text-size-adjust: 100%;
-    -webkit-text-size-adjust: 100%;
-}
-
-body {
-    height: 100%;
-    line-height: 1.6;
-    font-family: @weuiFontDefault;
-}
-
-* {
-    margin: 0;
+@import "../../base/fn";
+.vue-pull-to-wrapper {
     padding: 0;
-}
-
-a img {
-    border: 0;
-}
-
-a {
-    text-decoration: none;
-    .setTapColor();
-}
-
-.app-page {
+    border: 0 none;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
     height: 100%;
+    .scroll-container {
+        flex: 1;
+        overflow-x: hidden;
+        overflow-y: scroll;
+        -webkit-overflow-scrolling: touch;
+        .bottom-filler {
+            height: 0px;
+        }
+        .bottom-fill {
+            transition-timing-function: cubic-bezier(0, 0, 0, 1);
+        }
+    }
+    .action-block {
+        position: relative;
+        width: 100%;
+        .default-text {
+            height: 100%;
+            line-height: 50px;
+            text-align: center;
+        }
+    }
 }

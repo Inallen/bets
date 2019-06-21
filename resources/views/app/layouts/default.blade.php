@@ -18,19 +18,15 @@
     @yield('link')
 </head>
 <body ontouchstart>
-    <div class="container" id="container">
-        <div class="page" id="app">
-            <router-view></router-view>
-            {{--<div class="page__hd">
-                <h1 class="page__title">Grid</h1>
-                <p class="page__desc">九宫格</p>
-            </div>--}}
-            {{--<div class="page__bd" style="height: 100%;">
-                @yield('content')
-            </div>--}}
-        </div>
-
-
+    <div class="app-page" id="app">
+        <router-view></router-view>
+        {{--<div class="page__hd">
+            <h1 class="page__title">Grid</h1>
+            <p class="page__desc">九宫格</p>
+        </div>--}}
+        {{--<div class="page__bd" style="height: 100%;">
+            @yield('content')
+        </div>--}}
     </div>
     <script src="{{ asset('js/app.js') }}"></script>
 </body>

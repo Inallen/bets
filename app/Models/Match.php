@@ -38,7 +38,7 @@ class Match extends Model
 
     public function predictions()
     {
-        return $this->hasMany('App\Models\Match', 'match_id');
+        return $this->hasMany('App\Models\Prediction', 'match_id');
     }
 
     public function tournament()
