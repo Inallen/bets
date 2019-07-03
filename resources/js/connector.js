@@ -6,4 +6,9 @@ export default {
             params: params
         })
     },
+    loadMore: function (url, params) {
+        return window.axios.get(url, {
+            params: params
+        })
+    },
 }

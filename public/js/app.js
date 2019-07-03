@@ -1885,6 +1885,9 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
   computed: Object(vuex__WEBPACK_IMPORTED_MODULE_0__["mapState"])({
     matches: function matches(state) {
       return state.modelMatches.matches;
+    },
+    next_page_url: function next_page_url(state) {
+      return state.modelMatches.next_page_url;
     }
   }),
   components: {
@@ -1893,28 +1896,19 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
   created: function created() {
     this.refreshMatches();
   },
-  methods: _objectSpread({}, Object(vuex__WEBPACK_IMPORTED_MODULE_0__["mapActions"])(['refreshMatches']), {
+  methods: _objectSpread({}, Object(vuex__WEBPACK_IMPORTED_MODULE_0__["mapActions"])('modelMatches', ['refreshMatches', 'loadMore']), {
     getAvatar: function getAvatar(avatar) {
       return "/gate/profile/photo" + avatar;
     },
     onPullUp: function onPullUp(loaded) {
-      var _this = this;
-
-      setTimeout(function () {
-        _this.refreshMatches();
-
-        loaded('done'); //finish the refreshing state
-      }, 3000);
+      this.refreshMatches().then(function () {
+        loaded('done');
+      });
     },
     onPullDown: function onPullDown(loaded) {
-      var _this2 = this;
-
-      console.log('finishCallback');
-      setTimeout(function () {
-        _this2.refreshMatches();
-
-        loaded('done'); //finish the refreshing state
-      }, 3000);
+      this.loadMore(this.next_page_url).then(function () {
+        loaded('done');
+      });
     }
   })
 });
@@ -54201,6 +54195,11 @@ window.axios = __webpack_require__(/*! axios */ "./node_modules/axios/index.js")
     return window.axios.get(_config__WEBPACK_IMPORTED_MODULE_0__["default"].baseUrl + 'api/matches', {
       params: params
     });
+  },
+  loadMore: function loadMore(url, params) {
+    return window.axios.get(url, {
+      params: params
+    });
   }
 });
 
@@ -54241,19 +54240,43 @@ __webpack_require__.r(__webpack_exports__);
 window.Vue = __webpack_require__(/*! vue */ "./node_modules/vue/dist/vue.common.js");
 Vue.use(vuex__WEBPACK_IMPORTED_MODULE_0__["default"]);
 var modelMatches = {
+  namespaced: true,
   state: {
-    matches: []
+    matches: [],
+    next_page_url: null
+  },
+  getters: {
+    nextPageUrl: function nextPageUrl(state) {
+      return state.next_page_url;
+    }
   },
   mutations: {
     REFRESH_MATCHES: function REFRESH_MATCHES(state, matches) {
       state.matches = matches.data;
+      state.next_page_url = matches.next_page_url;
+    },
+    LOAD_MORE: function LOAD_MORE(state, matches) {
+      state.matches = state.matches.concat(matches.data);
+      state.next_page_url = matches.next_page_url;
     }
   },
   actions: {
     refreshMatches: function refreshMatches(_ref, params) {
       var commit = _ref.commit;
-      _connector__WEBPACK_IMPORTED_MODULE_1__["default"].refreshMatches(params).then(function (res) {
-        commit('REFRESH_MATCHES', res.data);
+      return new Promise(function (resolve, reject) {
+        _connector__WEBPACK_IMPORTED_MODULE_1__["default"].refreshMatches(params).then(function (res) {
+          commit('REFRESH_MATCHES', res.data);
+          resolve();
+        });
+      });
+    },
+    loadMore: function loadMore(_ref2, url, params) {
+      var commit = _ref2.commit;
+      return new Promise(function (resolve, reject) {
+        _connector__WEBPACK_IMPORTED_MODULE_1__["default"].loadMore(url, params).then(function (res) {
+          commit('LOAD_MORE', res.data);
+          resolve();
+        });
       });
     }
   }

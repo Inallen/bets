@@ -38,7 +38,8 @@
     import PullToRefresh from './pull-to-refresh';
     export default({
         computed: mapState({
-            matches: state => state.modelMatches.matches
+            matches: state => state.modelMatches.matches,
+            next_page_url: state => state.modelMatches.next_page_url
         }),
         components: {
             PullToRefresh
@@ -47,24 +48,22 @@
             this.refreshMatches();
         },
         methods: {
-            ...mapActions([
-                'refreshMatches'
+            ...mapActions('modelMatches', [
+                'refreshMatches',
+                'loadMore'
             ]),
             getAvatar(avatar){
                 return "/gate/profile/photo"+avatar;
             },
             onPullUp(loaded) {
-                setTimeout(()=>{
-                    this.refreshMatches();
-                    loaded('done');//finish the refreshing state
-                },3000);
+                this.refreshMatches().then(() => {
+                    loaded('done');
+                });
             },
             onPullDown(loaded) {
-                console.log('finishCallback');
-                setTimeout(()=>{
-                    this.refreshMatches();
-                    loaded('done');//finish the refreshing state
-                },3000);
+                this.loadMore(this.next_page_url).then(() => {
+                    loaded('done');
+                });
             },
         }
     });
